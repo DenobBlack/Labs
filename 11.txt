@@ -1,0 +1,355 @@
+import android.os.Bundle
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
+import androidx.compose.foundation.*
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Call
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import kotlin.math.roundToInt
+
+class MainActivity : ComponentActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContent {
+            AnimationExamples()
+        }
+    }
+}
+
+@Composable
+fun AnimationExamples() {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text("Animate*AsState", fontSize = 20.sp)
+        AnimateAsStateExamples()
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Text("Animatable", fontSize = 20.sp)
+        AnimatableExamples()
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Text("UpdateTransition", fontSize = 20.sp)
+        UpdateTransitionExample()
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Text("InfiniteTransition", fontSize = 20.sp)
+        InfiniteTransitionExample()
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Text("AnimatedVisibility", fontSize = 20.sp)
+        AnimatedVisibilityExample()
+    }
+}
+
+@Composable
+fun AnimateAsStateExamples() {
+    // 5.1.1 - Tween Color Change
+    var colorState by remember { mutableStateOf(Color.Red) }
+    val animatedColor by animateColorAsState(
+        targetValue = colorState,
+        animationSpec = tween(durationMillis = 3000)
+    )
+    Button(onClick = { colorState = if (colorState == Color.Red) Color.Blue else Color.Red }) {
+        Text("Tween Color Change")
+        Box(
+            modifier = Modifier
+                .size(20.dp)
+                .background(animatedColor)
+        )
+    }
+
+    // 5.1.2 - Keyframes Color Change
+    var keyframesColorState by remember { mutableStateOf(Color.Green) }
+    val animatedKeyframesColor by animateColorAsState(
+        targetValue = keyframesColorState,
+        animationSpec = keyframes {
+            durationMillis = 10000
+            Color.Green at 0
+            Color.Yellow at 2500
+            Color.Magenta at 5000
+            Color.Cyan at 7500
+            Color.Green at 10000
+        }
+    )
+    Button(onClick = {
+        keyframesColorState = if (keyframesColorState == Color.Green) Color.Gray else Color.Green
+    }) {
+        Text("Keyframes Color Change")
+        Box(
+            modifier = Modifier
+                .size(20.dp)
+                .background(animatedKeyframesColor)
+        )
+    }
+
+    // 5.1.3 - Repeatable Size Change (Image)
+    var sizeStateRepeatable by remember { mutableStateOf(100.dp) }
+    val animatedSizeRepeatable by animateDpAsState(
+        targetValue = sizeStateRepeatable,
+        animationSpec = repeatable(
+            iterations = 3,
+            animation = tween(durationMillis = 1000)
+        )
+    )
+    Button(onClick = {
+        sizeStateRepeatable = if (sizeStateRepeatable == 100.dp) 200.dp else 100.dp
+    }) {
+        Text("Repeatable Size Change")
+        Image(
+            painter = painterResource(id = R.drawable.ic_launcher_foreground), // Replace with your image
+            contentDescription = "Repeatable Size Image",
+            modifier = Modifier.size(animatedSizeRepeatable),
+            contentScale = ContentScale.Crop
+        )
+    }
+
+
+    // 5.1.4 - Spring Size Change (Image)
+    var sizeStateSpring by remember { mutableStateOf(50.dp) }
+    val animatedSizeSpring by animateDpAsState(
+        targetValue = sizeStateSpring,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessLow
+        )
+    )
+
+    Button(onClick = { sizeStateSpring = if (sizeStateSpring == 50.dp) 150.dp else 50.dp }) {
+        Text("Spring Size Change")
+        Image(
+            painter = painterResource(id = R.drawable.ic_launcher_foreground), // Replace with your image
+            contentDescription = "Spring Size Image",
+            modifier = Modifier.size(animatedSizeSpring),
+            contentScale = ContentScale.Crop
+        )
+    }
+
+
+    // 5.1.5 - Infinite Repeatable Color Change (Container)
+    val infiniteTransition = rememberInfiniteTransition()
+    val animatedColorInfinite by infiniteTransition.animateColor(
+        initialValue = Color.Red,
+        targetValue = Color.Blue,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 2000, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        )
+    )
+
+    Box(
+        modifier = Modifier
+            .size(100.dp)
+            .background(animatedColorInfinite)
+    ) {
+        Text("Infinite Color Change", color = Color.White, modifier = Modifier.align(Alignment.Center))
+    }
+}
+
+
+@Composable
+fun AnimatableExamples() {
+    // 5.2.1 - Animatable Color Change
+    val color = remember { Animatable(Color.Red) }
+    LaunchedEffect(Unit) {
+        color.animateTo(Color.Green, animationSpec = tween(durationMillis = 2000))
+    }
+    Button(onClick = {
+        // Start animation
+        CoroutineScope(currentCoroutineContext()).launch {
+            color.animateTo(
+                if (color.value == Color.Red) Color.Blue else Color.Red,
+                animationSpec = tween(durationMillis = 1000)
+            )
+        }
+    }) {
+        Text("Animatable Color Change")
+        Box(
+            modifier = Modifier
+                .size(20.dp)
+                .background(color.value)
+        )
+    }
+
+    // 5.2.2 - Animatable Repeatable Size Change (Circle Image)
+    val size = remember { Animatable(100.dp) }
+    LaunchedEffect(Unit) {
+        size.animateTo(150.dp, animationSpec = tween(durationMillis = 2000))
+    }
+    Button(onClick = {
+        CoroutineScope(currentCoroutineContext()).launch {
+            size.animateTo(
+                if (size.value == 100.dp) 200.dp else 100.dp,
+                animationSpec = repeatable(
+                    iterations = 3,
+                    animation = tween(durationMillis = 1000)
+                )
+            )
+        }
+    }) {
+        Text("Repeatable Size Change (Animatable)")
+        Image(
+            painter = painterResource(id = R.drawable.ic_launcher_foreground), // Replace with your circle image
+            contentDescription = "Repeatable Animatable Size Image",
+            modifier = Modifier
+                .size(size.value)
+                .background(Color.Gray, shape = CircleShape),
+            contentScale = ContentScale.Crop
+        )
+    }
+
+
+    // 5.2.3 - Animatable Rotation
+    val rotation = remember { Animatable(0f) }
+
+    LaunchedEffect(Unit) {
+        rotation.animateTo(
+            targetValue = 360f,
+            animationSpec = tween(
+                durationMillis = 2000,
+                easing = LinearEasing
+            )
+        )
+    }
+
+    Button(onClick = {
+        // Start rotation animation again
+        CoroutineScope(currentCoroutineContext()).launch {
+            rotation.animateTo(
+                targetValue = rotation.value + 360f,
+                animationSpec = tween(
+                    durationMillis = 2000,
+                    easing = LinearEasing
+                )
+            )
+        }
+    }) {
+        Text("Rotation Animation")
+        Image(
+            painter = painterResource(id = R.drawable.ic_launcher_foreground), // Replace with your image
+            contentDescription = "Rotated Image",
+            modifier = Modifier
+                .size(50.dp)
+                .rotate(rotation.value)
+        )
+    }
+}
+
+@Composable
+fun UpdateTransitionExample() {
+    var isExpanded by remember { mutableStateOf(false) }
+    val transition = updateTransition(targetState = isExpanded, label = "imageTransition")
+
+    val width by transition.animateDp(
+        transitionSpec = { tween(durationMillis = 500) }, label = "width"
+    ) {
+        if (it) 300.dp else 100.dp
+    }
+
+    val height by transition.animateDp(
+        transitionSpec = { tween(durationMillis = 500) }, label = "height"
+    ) {
+        if (it) 600.dp else 200.dp
+    }
+
+    val rotation by transition.animateFloat(
+        transitionSpec = { tween(durationMillis = 500) }, label = "rotation"
+    ) {
+        if (it) 360f else 0f
+    }
+
+    Button(onClick = { isExpanded = !isExpanded }) {
+        Text("Update Transition: Resize & Rotate")
+        Image(
+            painter = painterResource(id = R.drawable.ic_launcher_foreground), // Replace with your rectangular image
+            contentDescription = "Resizable Image",
+            modifier = Modifier
+                .size(width = width, height = height)
+                .rotate(rotation),
+            contentScale = ContentScale.Crop
+        )
+    }
+}
+
+@Composable
+fun InfiniteTransitionExample() {
+    val infiniteTransition = rememberInfiniteTransition()
+    val size by infiniteTransition.animateFloat(
+        initialValue = 40f,
+        targetValue = 80f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 1000, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        )
+    )
+
+    FloatingActionButton(
+        onClick = { /*TODO*/ },
+        modifier = Modifier.size(size.dp),
+        backgroundColor = MaterialTheme.colors.primary
+    ) {
+        Icon(Icons.Filled.Call, contentDescription = "Call")
+    }
+}
+
+
+@Composable
+fun AnimatedVisibilityExample() {
+    var isMenuVisible by remember { mutableStateOf(false) }
+
+    Column {
+        IconButton(onClick = { isMenuVisible = !isMenuVisible }) {
+            Icon(Icons.Filled.MoreVert, contentDescription = "Menu")
+        }
+
+        AnimatedVisibility(
+            visible = isMenuVisible,
+            enter = fadeIn(animationSpec = tween(durationMillis = 500)),
+            exit = fadeOut(animationSpec = tween(durationMillis = 500))
+        ) {
+            Text("Settings")
+        }
+
+        AnimatedVisibility(
+            visible = isMenuVisible,
+            enter = slideInVertically(animationSpec = tween(durationMillis = 500)),
+            exit = slideOutVertically(animationSpec = tween(durationMillis = 500))
+        ) {
+            Text("Contacts")
+        }
+
+        AnimatedVisibility(
+            visible = isMenuVisible,
+            enter = expandVertically(animationSpec = tween(durationMillis = 500)),
+            exit = shrinkVertically(animationSpec = tween(durationMillis = 500))
+        ) {
+            Text("About")
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun DefaultPreview() {
+    AnimationExamples()
+}
